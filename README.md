@@ -88,4 +88,21 @@ contract Submission is ISubmission {
         AddressBook newAddressBook = new AddressBook();
         return address(newAddressBook);
     }
+    function updateContact(
+    uint _id,
+    string memory _newFirstName,
+    string memory _newLastName,
+    uint[] memory _newPhoneNumbers
+) external {
+    // Sprawdzamy, czy kontakt istnieje
+    // (Zakładając, że masz mapping contacts[id])
+    Contact storage contact = contacts[_id];
+    
+    // Opcjonalnie: dodaj sprawdzenie, czy msg.sender jest właścicielem kontaktu
+    
+    contact.firstName = _newFirstName;
+    contact.lastName = _newLastName;
+    contact.phoneNumbers = _newPhoneNumbers;
+}
+
 }# BL4.2
