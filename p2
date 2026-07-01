@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.23;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+interface IAddressBook {
+    struct Contact {
+        uint id;
+        string firstName;
+        string lastName;
+        uint[] phoneNumbers;
+    }
+
+    function addContact(
+        string memory _firstName,
+        string memory _lastName,
+        uint[] memory _phoneNumbers
+    ) external;
+
+    function deleteContact(uint _id) external;
+
+    function getContact(uint _id) external view returns (Contact memory);
+
+    function getAllContacts() external view returns (Contact[] memory);
+}
+
+contract AddressBook is IAddressBook, Ownable {
+    mapping(uint => Contact) private contacts;
+    uint[] private contactIds;
+    mapping(uint => uint) private idToIndex;
+    mapping(uint => bool) private contactExists; // Dodane dla bezpieczeństwa usuwania
+    uint private nextContactId;
+
+    constructor() Ownable(msg.sender) {}
+
+    function addContact(
+        string memory _firstName,
+        string memory _lastName,
+        uint[] memory _phoneNumbers
+    ) external override onlyOwner {
+        uint currentId = nextContactId;
+        
+        contacts[currentId] = Contact({
+            id: currentId,
+            firstName: _firstName,
+            lastName: _lastName,
+            phoneNumbers: _phoneNumbers
+        });
+
+        idToIndex[currentId] = contactIds.length;
+        contactIds.push(currentId);
+        contactExists[currentId] = true;
+        nextContactId++;
+    }
+
+    function deleteContact(uint _id) external override onlyOwner {
+        require(contactExists[_id], "Contact not found");
+
+        uint index = idToIndex[_id];
+        uint lastId = contactIds[contactIds.length - 1];
+
+        // Swap i pop (nadpisanie usuwanego elementu ostatnim)
+        contactIds[index] = lastId;
+        idToIndex[lastId] = index;
+        contactIds.pop();
+
+        // Czyszczenie mapowań
+        delete contacts[_id];
+        delete idToIndex[_id];
+        delete contactExists[_id];
+    }
+
+    function getContact(uint _id) external view override returns (Contact memory) {
+        require(contactExists[_id], "Contact does not exist");
+        return contacts[_id];
+    }
+
+    function getAllContacts() external view override returns (Contact[] memory) {
+        Contact[] memory allContacts = new Contact[](contactIds.length);
+        for (uint i = 0; i < contactIds.length; i++) {
+            allContacts[i] = contacts[contactIds[i]];
+        }
+        return allContacts;
+    }
+}
+
+interface ISubmission {
+    function deploy() external returns (address);
+}
